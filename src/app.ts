@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { ulid } from "ulid";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = new Koa();
@@ -13,6 +14,32 @@ const prisma = new PrismaClient();
 const PORT = process.env.APP_PORT;
 
 app.use(bodyParser());
+
+const authenticate: Koa.Middleware = async (ctx, next) => {
+  const token = ctx.request.header.authorization?.replace("Bearer ", "");
+  if (!token) {
+    ctx.status = 401;
+    ctx.body = {
+      status: false,
+      statusCode: 401,
+      message: "Unauthorized",
+    };
+    return;
+  }
+
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    ctx.state.user = decoded.data;
+    await next();
+  } catch (error) {
+    ctx.status = 401;
+    ctx.body = {
+      status: false,
+      statusCode: 401,
+      message: "Invalid token",
+    };
+  }
+};
 
 router.get("/", (ctx) => {
   ctx.body = {
@@ -75,6 +102,62 @@ router.delete("/users/:id", async (ctx) => {
     status: true,
     message: `User with id ${id} deleted successfully`,
   };
+});
+
+type LoginUser = {
+  username: string;
+  password: string;
+};
+
+router.post("/login", async (ctx) => {
+  const { username, password }: LoginUser = ctx.request.body as LoginUser;
+  const user: any = await prisma.user.findUnique({ where: { username } });
+  if (!user) {
+    ctx.status = 401;
+    ctx.body = {
+      status: false,
+      statusCode: 401,
+      message: "Invalid credentials",
+    };
+    return;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (isPasswordValid) {
+    const payload = {
+      data: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+      },
+    };
+    const secret = process.env.JWT_SECRET!;
+    const token = jwt.sign(payload, secret, { expiresIn: "1h" });
+    ctx.status = 200;
+    ctx.body = {
+      status: true,
+      statusCode: 200,
+      data: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+      },
+      token,
+    };
+    return;
+  } else {
+    ctx.status = 401;
+    ctx.body = {
+      status: false,
+      statusCode: 401,
+      message: "Invalid credentials",
+    };
+    return;
+  }
+});
+
+router.get("/me", authenticate, (ctx) => {
+  ctx.body = ctx.state.user;
 });
 
 app.use(router.routes());
