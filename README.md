@@ -28,6 +28,12 @@ cp .env.example .env
 pnpm install
 ```
 
+- Push the database schema
+
+```bash
+pnpx prisma db push
+```
+
 - Running the app
 
 ```bash
