@@ -1,4 +1,4 @@
-<h1 align="center">Koa.js Typescript REST API</h1>
+<h1 align="center">Koa.js TypeScript REST API</h1>
 
 ## Tech Stack
 
