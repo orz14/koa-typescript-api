@@ -4,6 +4,7 @@ import bodyParser from "koa-bodyparser";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { ulid } from "ulid";
 
 dotenv.config();
 const app = new Koa();
@@ -32,10 +33,12 @@ type RegisterUser = {
 };
 
 router.post("/users", async (ctx) => {
+  const id = ulid();
   const { name, username, password }: RegisterUser = ctx.request.body as RegisterUser;
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await prisma.user.create({
     data: {
+      id,
       name,
       username,
       password: hashedPassword,
@@ -45,7 +48,7 @@ router.post("/users", async (ctx) => {
 });
 
 router.get("/users/:id", async (ctx) => {
-  const id = Number(ctx.params.id);
+  const id = ctx.params.id;
   const user = await prisma.user.findUnique({ where: { id } });
   ctx.body = user;
 });
@@ -56,7 +59,7 @@ type UpdateUser = {
 };
 
 router.patch("/users/:id", async (ctx) => {
-  const id = Number(ctx.params.id);
+  const id = ctx.params.id;
   const { name, username }: UpdateUser = ctx.request.body as UpdateUser;
   const updatedUser = await prisma.user.update({
     where: { id },
@@ -66,7 +69,7 @@ router.patch("/users/:id", async (ctx) => {
 });
 
 router.delete("/users/:id", async (ctx) => {
-  const id = Number(ctx.params.id);
+  const id = ctx.params.id;
   await prisma.user.delete({ where: { id } });
   ctx.body = {
     status: true,
