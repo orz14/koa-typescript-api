@@ -31,7 +31,8 @@ const authenticate: Koa.Middleware = async (ctx, next) => {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     ctx.state.user = decoded.data;
     await next();
-  } catch (error) {
+  } catch (error: any) {
+    console.error(`Error while verifying token: ${error.message}`);
     ctx.status = 401;
     ctx.body = {
       status: false,

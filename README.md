@@ -9,20 +9,20 @@
 
 ## Installation
 
-- Clone Repository
+- Clone repository
 
 ```bash
 git clone https://github.com/orz14/koa-typescript-api.git
 cd koa-typescript-api/
 ```
 
-- Copy .env and Modify It
+- Copy .env and modify it
 
 ```bash
 cp .env.example .env
 ```
 
-- Install Node Modules Using PNPM
+- Install node modules using PNPM
 
 ```bash
 pnpm install
